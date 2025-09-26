@@ -9,204 +9,176 @@ import {
     Text,
 } from "@react-email/components";
 
-type MonthlyReportData = {
-    month: string;
-    stats: {
-        totalIncome: number;
-        totalExpenses: number;
-        byCategory: Record<string, number>;
-    };
-    insights: string[];
-};
 
-type BudgetAlertData = {
-    percentageUsed: number;
-    budgetAmount: number;
-    totalExpenses: number;
-};
+export default function EmailTemplate({ userName, type, data }: any) {
+    return (
+        <Html>
+            <Head />
+            <Preview>
+                {type === "monthly-report"
+                    ? "Your Monthly Financial Report"
+                    : "Budget Alert"}
+            </Preview>
+            <Body style={styles.body}>
+                <Container style={styles.container}>
+                    <Heading style={styles.title}>
+                        {type === "monthly-report" ? "Monthly Financial Report" : "Budget Alert"}
+                    </Heading>
 
-type EmailProps =
-    | {
-        userName: string;
-        type: "monthly-report";
-        data: MonthlyReportData;
-    }
-    | {
-        userName: string;
-        type: "budget-alert";
-        data: BudgetAlertData;
-    };
+                    <Text style={styles.text}>Hello {userName},</Text>
 
-export default function EmailTemplate({ userName, type, data }: EmailProps) {
-    if (type === "monthly-report") {
-        const report = data as MonthlyReportData;
-        const net = report.stats.totalIncome - report.stats.totalExpenses;
+                    {type === "monthly-report" && renderMonthlyReport(data)}
+                    {type === "budget-alert" && renderBudgetAlert(data)}
 
-        return (
-            <Html>
-                <Head />
-                <Preview>Your Monthly Financial Report</Preview>
-                <Body style={styles.body}>
-                    <Container style={styles.container}>
-                        <Heading style={styles.title}>Monthly Financial Report</Heading>
-
-                        <Text style={styles.text}>Hello {userName},</Text>
-                        <Text style={styles.text}>
-                            Here&rsquo;s your financial summary for {report.month}:
-                        </Text>
-
-                        {/* Main Stats */}
-                        <Section style={styles.statsContainer}>
-                            <div style={styles.stat}>
-                                <Text style={styles.text}>Total Income</Text>
-                                <Text style={styles.heading}>${report.stats.totalIncome}</Text>
-                            </div>
-                            <div style={styles.stat}>
-                                <Text style={styles.text}>Total Expenses</Text>
-                                <Text style={styles.heading}>${report.stats.totalExpenses}</Text>
-                            </div>
-                            <div style={styles.stat}>
-                                <Text style={styles.text}>Net</Text>
-                                <Text style={styles.heading}>${net}</Text>
-                            </div>
-                        </Section>
-
-                        {/* Category Breakdown */}
-                        {report.stats.byCategory && (
-                            <Section style={styles.section}>
-                                <Heading style={styles.heading}>Expenses by Category</Heading>
-                                {Object.entries(report.stats.byCategory).map(([category, amount]) => (
-                                    <div key={category} style={styles.row}>
-                                        <Text style={styles.text}>{category}</Text>
-                                        <Text style={styles.text}>${amount}</Text>
-                                    </div>
-                                ))}
-                            </Section>
-                        )}
-
-                        {/* AI Insights */}
-                        {report.insights && (
-                            <Section style={styles.section}>
-                                <Heading style={styles.heading}>Welth Insights</Heading>
-                                {report.insights.map((insight, index) => (
-                                    <Text key={index} style={styles.text}>
-                                        • {insight}
-                                    </Text>
-                                ))}
-                            </Section>
-                        )}
-
-                        <Text style={styles.footer}>
-                            Thank you for using Welth. Keep tracking your finances for better financial health!
-                        </Text>
-                    </Container>
-                </Body>
-            </Html>
-        );
-    }
-
-    if (type === "budget-alert") {
-        const alert = data as BudgetAlertData;
-
-        return (
-            <Html>
-                <Head />
-                <Preview>Budget Alert</Preview>
-                <Body style={styles.body}>
-                    <Container style={styles.container}>
-                        <Heading style={styles.title}>Budget Alert</Heading>
-                        <Text style={styles.text}>Hello {userName},</Text>
-                        <Text style={styles.text}>
-                            You&rsquo;ve used {alert.percentageUsed.toFixed(1)}% of your monthly budget.
-                        </Text>
-
-                        <Section style={styles.statsContainer}>
-                            <div style={styles.stat}>
-                                <Text style={styles.text}>Budget Amount</Text>
-                                <Text style={styles.heading}>${alert.budgetAmount}</Text>
-                            </div>
-                            <div style={styles.stat}>
-                                <Text style={styles.text}>Spent So Far</Text>
-                                <Text style={styles.heading}>${alert.totalExpenses}</Text>
-                            </div>
-                            <div style={styles.stat}>
-                                <Text style={styles.text}>Remaining</Text>
-                                <Text style={styles.heading}>
-                                    ${alert.budgetAmount - alert.totalExpenses}
-                                </Text>
-                            </div>
-                        </Section>
-                    </Container>
-                </Body>
-            </Html>
-        );
-    }
-
-    return null;
+                    <Text style={styles.footer}>
+                        Thank you for using Welth. Keep tracking your finances for better
+                        financial health!
+                    </Text>
+                </Container>
+            </Body>
+        </Html>
+    );
 }
 
-const styles = {
+function renderMonthlyReport(data: any) {
+    const { month, stats, insights } = data;
+    const net = stats.totalIncome - stats.totalExpenses;
+
+    return (
+        <>
+            <Text style={styles.text}>Here’s your financial summary for {month}:</Text>
+
+            {/* Stats */}
+            <Section style={styles.statsContainer}>
+                <Stat label="Total Income" value={stats.totalIncome} />
+                <Stat label="Total Expenses" value={stats.totalExpenses} />
+                <Stat label="Net" value={net} />
+            </Section>
+
+            {/* Category Breakdown */}
+            {Object.keys(stats.byCategory).length > 0 && (
+                <Section style={styles.section}>
+                    <Heading style={styles.heading}>Expenses by Category</Heading>
+                    {Object.entries(stats.byCategory).map(([category, amount]) => (
+                        <Row key={category} label={category} value={amount} />
+                    ))}
+                </Section>
+            )}
+
+            {/* Insights */}
+            {insights.length > 0 && (
+                <Section style={styles.section}>
+                    <Heading style={styles.heading}>Welth Insights</Heading>
+                    {insights.map((insight: any, i: any) => (
+                        <Text key={i} style={styles.text}>
+                            • {insight}
+                        </Text>
+                    ))}
+                </Section>
+            )}
+        </>
+    );
+}
+
+function renderBudgetAlert(data: any) {
+    const { percentageUsed, budgetAmount, totalExpenses } = data;
+    const remaining = budgetAmount - totalExpenses;
+
+    return (
+        <>
+            <Text style={styles.text}>
+                You’ve used {percentageUsed.toFixed(1)}% of your monthly budget.
+            </Text>
+
+            <Section style={styles.statsContainer}>
+                <Stat label="Budget Amount" value={budgetAmount} />
+                <Stat label="Spent So Far" value={totalExpenses} />
+                <Stat label="Remaining" value={remaining} />
+            </Section>
+        </>
+    );
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+    return (
+        <div style={styles.stat}>
+            <Text style={styles.text}>{label}</Text>
+            <Text style={styles.heading}>${value}</Text>
+        </div>
+    );
+}
+
+function Row({ label, value }: { label: string; value: number }) {
+    return (
+        <div style={styles.row}>
+            <Text style={styles.text}>{label}</Text>
+            <Text style={styles.text}>${value}</Text>
+        </div>
+    );
+}
+
+const styles: any = {
     body: {
         backgroundColor: "#f6f9fc",
-        fontFamily: "-apple-system, sans-serif",
+        fontFamily: "sans-serif",
     },
     container: {
-        backgroundColor: "#ffffff",
+        backgroundColor: "#fff",
         margin: "0 auto",
         padding: "20px",
-        borderRadius: "5px",
-        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+        borderRadius: "6px",
+        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
     },
     title: {
         color: "#1f2937",
-        fontSize: "32px",
+        fontSize: "28px",
         fontWeight: "bold",
         textAlign: "center",
         margin: "0 0 20px",
     },
     heading: {
         color: "#1f2937",
-        fontSize: "20px",
+        fontSize: "18px",
         fontWeight: 600,
-        margin: "0 0 16px",
+        margin: "0 0 12px",
     },
     text: {
         color: "#4b5563",
-        fontSize: "16px",
-        margin: "0 0 16px",
+        fontSize: "15px",
+        margin: "0 0 12px",
     },
     section: {
-        marginTop: "32px",
-        padding: "20px",
+        marginTop: "24px",
+        padding: "16px",
         backgroundColor: "#f9fafb",
         borderRadius: "5px",
         border: "1px solid #e5e7eb",
     },
     statsContainer: {
-        margin: "32px 0",
-        padding: "20px",
+        margin: "24px 0",
+        padding: "16px",
         backgroundColor: "#f9fafb",
         borderRadius: "5px",
     },
     stat: {
-        marginBottom: "16px",
-        padding: "12px",
+        marginBottom: "12px",
+        padding: "10px",
         backgroundColor: "#fff",
         borderRadius: "4px",
-        boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
     },
     row: {
         display: "flex",
         justifyContent: "space-between",
-        padding: "12px 0",
+        padding: "8px 0",
         borderBottom: "1px solid #e5e7eb",
     },
     footer: {
         color: "#6b7280",
-        fontSize: "14px",
+        fontSize: "13px",
         textAlign: "center",
-        marginTop: "32px",
-        paddingTop: "16px",
+        marginTop: "24px",
+        paddingTop: "12px",
         borderTop: "1px solid #e5e7eb",
     },
-} as const;
+};

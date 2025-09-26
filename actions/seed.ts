@@ -4,8 +4,8 @@ import prisma from "@/lib/prisma";
 import { subDays } from "date-fns";
 import { TransactionStatus } from "@/app/generated/prisma";
 
-const ACCOUNT_ID = "5e02db96-fb67-4801-929b-cccabd4ed6fd";
-const USER_ID = "e417d0a2-60d0-4f69-9062-4aa2b6057ff8";
+const ACCOUNT_ID = "97259762-c009-4506-8198-b5e9db625a99";
+const USER_ID = "d4def0d2-4e27-4682-baf4-a96c7d95a825";
 
 type TransactionCategory = {
     name: string;
