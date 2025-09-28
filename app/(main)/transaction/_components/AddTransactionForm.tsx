@@ -81,25 +81,25 @@ export function AddTransactionForm({
     defaultValues:
       editMode && initialData
         ? {
-            type: initialData.type as "EXPENSE" | "INCOME",
-            amount: initialData.amount.toString(),
-            description: initialData.description,
-            accountId: initialData.accountId,
-            category: initialData.category,
-            date: new Date(initialData.date),
-            isRecurring: initialData.isRecurring,
-            ...(initialData.recurringInterval && {
-              recurringInterval: initialData.recurringInterval as "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY",
-            }),
-          }
+          type: initialData.type as "EXPENSE" | "INCOME",
+          amount: initialData.amount.toString(),
+          description: initialData.description,
+          accountId: initialData.accountId,
+          category: initialData.category,
+          date: new Date(initialData.date),
+          isRecurring: initialData.isRecurring,
+          ...(initialData.recurringInterval && {
+            recurringInterval: initialData.recurringInterval as "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY",
+          }),
+        }
         : {
-            type: "EXPENSE" as const,
-            amount: "",
-            description: "",
-            accountId: accounts.find((ac: any) => ac.isDefault)?.id || "",
-            date: new Date(),
-            isRecurring: false,
-          },
+          type: "EXPENSE" as const,
+          amount: "",
+          description: "",
+          accountId: accounts.find((ac: any) => ac.isDefault)?.id || "",
+          date: new Date(),
+          isRecurring: false,
+        },
   });
 
   const {
@@ -332,16 +332,16 @@ export function AddTransactionForm({
       )}
 
       {/* Actions */}
-      <div className="flex gap-4">
+      <div className="md:flex justify-between gap-4 w-full">
         <Button
           type="button"
           variant="outline"
-          className="w-full"
+          className="w-1/2"
           onClick={() => router.back()}
         >
           Cancel
         </Button>
-        <Button type="submit" className="w-full" disabled={transactionLoading}>
+        <Button type="submit" className="w-1/2" disabled={transactionLoading}>
           {transactionLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

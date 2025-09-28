@@ -13,7 +13,6 @@ interface AccountPageProps {
 
 const AccountPage = async ({ params }: AccountPageProps) => {
     const accountData = await getAccountWithTransactions(params.id)
-    console.log(accountData);
     
     if (!accountData) {
         notFound();
@@ -43,12 +42,10 @@ const AccountPage = async ({ params }: AccountPageProps) => {
                 </div>
             </div>
 
-            {/* Chart Section */}
             <Suspense fallback={<BarLoader className="mt-4" width={"100%"} color="#9333ea" />}>
                 <AccountChart transactions={transactions} />
             </Suspense>
 
-            {/* Transactions Table */}
             <Suspense fallback={<BarLoader className="mt-4" width={"100%"} color="#9333ea" />}>
                 <TransactionTable transactions={transactions} />
             </Suspense>

@@ -1,14 +1,19 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   experimental: {
     serverActions: {
       bodySizeLimit: "5mb"
     }
   },
-  images: { // we did it 
-    remotePatterns:[new URL('https://randomuser.me/api/portraits/**')]
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'randomuser.me',
+        pathname: '/api/portraits/**',
+      }
+    ]
   }
 };
 

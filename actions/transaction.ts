@@ -9,13 +9,11 @@ import { request } from "@arcjet/next";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-// Helper function to convert Prisma Decimal to number
 const serializeAmount = (obj: any) => ({
     ...obj,
     amount: obj.amount.toNumber(),
 });
 
-// Simple interface for transaction data
 interface CreateTransactionData {
     type: "EXPENSE" | "INCOME";
     amount: number;
@@ -26,17 +24,13 @@ interface CreateTransactionData {
     isRecurring?: boolean;
     recurringInterval?: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 }
-
-// Create a new transaction
 export async function createTransaction(data: CreateTransactionData) {
     try {
-        // Check if user is authenticated
         const { userId } = await auth();
         if (!userId) {
             throw new Error("You must be logged in to create a transaction");
         }
 
-        // Rate limiting check (optional - can be removed for simplicity)
         try {
             const req = await request();
             const decision = await aj.protect(req, {
@@ -51,11 +45,9 @@ export async function createTransaction(data: CreateTransactionData) {
                 throw new Error("Request blocked. Please try again.");
             }
         } catch (rateLimitError) {
-            // If rate limiting fails, continue anyway (for development)
             console.warn("Rate limiting check failed:", rateLimitError);
         }
 
-        // Find the user
         const user = await prisma.user.findUnique({
             where: { clerkUserId: userId },
         });
@@ -64,7 +56,6 @@ export async function createTransaction(data: CreateTransactionData) {
             throw new Error("User account not found. Please try logging in again.");
         }
 
-        // Find the account
         const account = await prisma.account.findUnique({
             where: {
                 id: data.accountId,
@@ -76,13 +67,9 @@ export async function createTransaction(data: CreateTransactionData) {
             throw new Error("Account not found. Please select a valid account.");
         }
 
-        // Calculate new balance
         const balanceChange = data.type === "EXPENSE" ? -data.amount : data.amount;
         const newBalance = account.balance.toNumber() + balanceChange;
-
-        // Create transaction and update account balance in one operation
         const transaction = await prisma.$transaction(async (tx) => {
-            // Create the transaction
             const newTransaction = await tx.transaction.create({
                 data: {
                     ...data,
@@ -93,7 +80,6 @@ export async function createTransaction(data: CreateTransactionData) {
                 },
             });
 
-            // Update account balance
             await tx.account.update({
                 where: { id: data.accountId },
                 data: { balance: newBalance },
@@ -102,7 +88,6 @@ export async function createTransaction(data: CreateTransactionData) {
             return newTransaction;
         });
 
-        // Refresh the dashboard and account pages
         revalidatePath("/dashboard");
         revalidatePath(`/account/${transaction.accountId}`);
 
@@ -111,7 +96,6 @@ export async function createTransaction(data: CreateTransactionData) {
             data: serializeAmount(transaction) 
         };
     } catch (error) {
-        // Return a user-friendly error message
         const errorMessage = error instanceof Error ? error.message : "Failed to create transaction";
         throw new Error(errorMessage);
     }

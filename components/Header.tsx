@@ -6,7 +6,6 @@ import {
     SignedOut,
     UserButton,
 } from '@clerk/nextjs'
-// import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from './ui/button'
 import { LayoutDashboard, PenBox } from 'lucide-react'
@@ -18,8 +17,7 @@ const Header = async () => {
         <header className='fixed top-0 border-b backdrop-blur-md w-full z-50 bg-white/80'>
             <nav className='container mx-auto py-4 px-6 md:px-12 flex items-center justify-between'>
                 <Link href="/">
-                    <h1 className='text-2xl font-bold gradient-title '>ExpenseHero</h1>
-                    {/* <Image src="" alt='ExpenseHero logo' height={60} width={200} className="h-12 w-auto object-contain"/> */}
+                    <h1 className='text-2xl font-bold gradient-title'>ExpenseHero</h1>
                 </Link>
                 <div className='flex items-center space-x-2 md:space-x-4'>
                     <SignedIn>

@@ -1,4 +1,3 @@
-// Types
 type Stat = {
     value: string;
     label: string;
@@ -22,8 +21,6 @@ type Testimonial = {
     image: string;
     quote: string;
 };
-
-// Stats Data
 export const statsData: Stat[] = [
     {
         value: "50K+",
@@ -42,8 +39,6 @@ export const statsData: Stat[] = [
         label: "User Rating",
     },
 ];
-
-// Features Data
 export const featuresData: Feature[] = [
     {
         icon: "BarChart3",
@@ -79,7 +74,6 @@ export const featuresData: Feature[] = [
     },
 ];
 
-// How It Works Data
 export const howItWorksData: HowItWorksStep[] = [
     {
         icon: "CreditCard",
@@ -101,7 +95,6 @@ export const howItWorksData: HowItWorksStep[] = [
     },
 ];
 
-// Testimonials Data
 export const testimonialsData: Testimonial[] = [
     {
         name: "Sarah Johnson",

@@ -4,7 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
-const serializeTransaction = (obj: any) => { // Converts BigInt values like balance and amount into regular numbers. This is necessary because JSON.stringify() does not handle BigInt.
+const serializeTransaction = (obj: any) => {
     const serialized = { ...obj };
 
     if (obj.balance) serialized.balance = obj.balance.toNumber();

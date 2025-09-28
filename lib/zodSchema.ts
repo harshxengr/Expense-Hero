@@ -9,10 +9,6 @@ export const accountSchema = z.object({
 
 export type AccountSchemaType = z.infer<typeof accountSchema>
 
-// z.infer<typeof accountSchema> is a powerful feature of Zod.
-// It extracts the TypeScript type from your schema automatically.
-// This means you don't have to manually write the type interface — Zod generates it for you.
-
 
 export const transactionSchema = z.object({
     type: z.enum(["INCOME", "EXPENSE"]),

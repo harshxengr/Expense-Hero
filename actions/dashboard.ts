@@ -20,7 +20,7 @@ export type SerializedAccount = {
 const serializeTransaction = (obj: any): SerializedAccount => {
     const serialized = { ...obj } as SerializedAccount;
 
-    if (obj.balance) { // Convert Decimal fields (Prisma uses Decimal.js)
+    if (obj.balance) {
         serialized.balance = obj.balance.toNumber();
     }
     return serialized;
@@ -29,7 +29,7 @@ const serializeTransaction = (obj: any): SerializedAccount => {
 interface CreateAccountInput {
     name: string;
     type: "CURRENT" | "SAVINGS";
-    balance: string; // Will convert to float
+    balance: string;
     isDefault: boolean;
 }
 
@@ -76,7 +76,7 @@ export async function createAccount(data: CreateAccountInput): Promise<CreateAcc
 
         const serializedAccount = serializeTransaction(account);
 
-        revalidatePath("/dashboard"); // it refetch the value of this page
+        revalidatePath("/dashboard");
 
         return { success: true, data: serializedAccount };
     } catch (error) {
