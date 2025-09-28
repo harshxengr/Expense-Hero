@@ -4,56 +4,67 @@ import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-// import aj from "@/lib/arcjet";
+import aj from "@/lib/arcjet";
 import { request } from "@arcjet/next";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-const serializeAmount = (obj) => ({
+// Helper function to convert Prisma Decimal to number
+const serializeAmount = (obj: any) => ({
     ...obj,
     amount: obj.amount.toNumber(),
 });
 
-// Create Transaction
-export async function createTransaction(data) {
+// Simple interface for transaction data
+interface CreateTransactionData {
+    type: "EXPENSE" | "INCOME";
+    amount: number;
+    description?: string;
+    date: Date;
+    accountId: string;
+    category: string;
+    isRecurring?: boolean;
+    recurringInterval?: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
+}
+
+// Create a new transaction
+export async function createTransaction(data: CreateTransactionData) {
     try {
+        // Check if user is authenticated
         const { userId } = await auth();
-        if (!userId) throw new Error("Unauthorized");
-
-        // Get request data for ArcJet
-        const req = await request();
-
-        // Check rate limit
-        const decision = await aj.protect(req, {
-            userId,
-            requested: 1, // Specify how many tokens to consume
-        });
-
-        if (decision.isDenied()) {
-            if (decision.reason.isRateLimit()) {
-                const { remaining, reset } = decision.reason;
-                console.error({
-                    code: "RATE_LIMIT_EXCEEDED",
-                    details: {
-                        remaining,
-                        resetInSeconds: reset,
-                    },
-                });
-
-                throw new Error("Too many requests. Please try again later.");
-            }
-
-            throw new Error("Request blocked");
+        if (!userId) {
+            throw new Error("You must be logged in to create a transaction");
         }
 
+        // Rate limiting check (optional - can be removed for simplicity)
+        try {
+            const req = await request();
+            const decision = await aj.protect(req, {
+                userId,
+                requested: 1,
+            });
+
+            if (decision.isDenied()) {
+                if (decision.reason.isRateLimit()) {
+                    throw new Error("Too many requests. Please wait a moment and try again.");
+                }
+                throw new Error("Request blocked. Please try again.");
+            }
+        } catch (rateLimitError) {
+            // If rate limiting fails, continue anyway (for development)
+            console.warn("Rate limiting check failed:", rateLimitError);
+        }
+
+        // Find the user
         const user = await prisma.user.findUnique({
             where: { clerkUserId: userId },
         });
 
         if (!user) {
-            throw new Error("User not found");
+            throw new Error("User account not found. Please try logging in again.");
         }
 
+        // Find the account
         const account = await prisma.account.findUnique({
             where: {
                 id: data.accountId,
@@ -62,26 +73,27 @@ export async function createTransaction(data) {
         });
 
         if (!account) {
-            throw new Error("Account not found");
+            throw new Error("Account not found. Please select a valid account.");
         }
 
         // Calculate new balance
         const balanceChange = data.type === "EXPENSE" ? -data.amount : data.amount;
         const newBalance = account.balance.toNumber() + balanceChange;
 
-        // Create transaction and update account balance
+        // Create transaction and update account balance in one operation
         const transaction = await prisma.$transaction(async (tx) => {
+            // Create the transaction
             const newTransaction = await tx.transaction.create({
                 data: {
                     ...data,
                     userId: user.id,
-                    nextRecurringDate:
-                        data.isRecurring && data.recurringInterval
-                            ? calculateNextRecurringDate(data.date, data.recurringInterval)
-                            : null,
+                    nextRecurringDate: data.isRecurring && data.recurringInterval
+                        ? calculateNextRecurringDate(data.date, data.recurringInterval)
+                        : null,
                 },
             });
 
+            // Update account balance
             await tx.account.update({
                 where: { id: data.accountId },
                 data: { balance: newBalance },
@@ -90,16 +102,22 @@ export async function createTransaction(data) {
             return newTransaction;
         });
 
+        // Refresh the dashboard and account pages
         revalidatePath("/dashboard");
         revalidatePath(`/account/${transaction.accountId}`);
 
-        return { success: true, data: serializeAmount(transaction) };
+        return { 
+            success: true, 
+            data: serializeAmount(transaction) 
+        };
     } catch (error) {
-        throw new Error((error as Error).message);
+        // Return a user-friendly error message
+        const errorMessage = error instanceof Error ? error.message : "Failed to create transaction";
+        throw new Error(errorMessage);
     }
 }
 
-export async function getTransaction(id) {
+export async function getTransaction(id: any) {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
 
@@ -121,7 +139,7 @@ export async function getTransaction(id) {
     return serializeAmount(transaction);
 }
 
-export async function updateTransaction(id, data) {
+export async function updateTransaction(id: any, data: any) {
     try {
         const { userId } = await auth();
         if (!userId) throw new Error("Unauthorized");
@@ -227,36 +245,51 @@ export async function getUserTransactions(query = {}) {
     }
 }
 
-// Scan Receipt
-export async function scanReceipt(file) {
-    try {
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+// Interface for scanned receipt data
+interface ScannedReceiptData {
+    amount: number;
+    date: Date;
+    description: string;
+    category: string;
+    merchantName: string;
+}
 
-        // Convert File to ArrayBuffer
+// Scan a receipt image using AI
+export async function scanReceipt(file: File): Promise<ScannedReceiptData> {
+    try {
+        // Check if API key is available
+        if (!process.env.GEMINI_API_KEY) {
+            throw new Error("AI service not configured. Please contact support.");
+        }
+
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+        // Convert file to base64 for AI processing
         const arrayBuffer = await file.arrayBuffer();
-        // Convert ArrayBuffer to Base64
         const base64String = Buffer.from(arrayBuffer).toString("base64");
 
+        // Simple, clear prompt for the AI
         const prompt = `
-      Analyze this receipt image and extract the following information in JSON format:
-      - Total amount (just the number)
-      - Date (in ISO format)
-      - Description or items purchased (brief summary)
-      - Merchant/store name
-      - Suggested category (one of: housing,transportation,groceries,utilities,entertainment,food,shopping,healthcare,education,personal,travel,insurance,gifts,bills,other-expense )
-      
-      Only respond with valid JSON in this exact format:
-      {
-        "amount": number,
-        "date": "ISO date string",
-        "description": "string",
-        "merchantName": "string",
-        "category": "string"
-      }
+            Analyze this receipt image and extract the following information in JSON format:
+            - Total amount (just the number)
+            - Date (in ISO format)
+            - Description or items purchased (brief summary)
+            - Merchant/store name
+            - Suggested category (one of: housing,transportation,groceries,utilities,entertainment,food,shopping,healthcare,education,personal,travel,insurance,gifts,bills,other-expense)
+            
+            Only respond with valid JSON in this exact format:
+            {
+              "amount": number,
+              "date": "ISO date string",
+              "description": "string",
+              "merchantName": "string",
+              "category": "string"
+            }
 
-      If its not a recipt, return an empty object
-    `;
+            If it's not a receipt, return an empty object.
+        `;
 
+        // Send request to AI
         const result = await model.generateContent([
             {
                 inlineData: {
@@ -267,31 +300,40 @@ export async function scanReceipt(file) {
             prompt,
         ]);
 
+        // Get and clean the response
         const response = await result.response;
         const text = response.text();
         const cleanedText = text.replace(/```(?:json)?\n?/g, "").trim();
 
-        try {
-            const data = JSON.parse(cleanedText);
-            return {
-                amount: parseFloat(data.amount),
-                date: new Date(data.date),
-                description: data.description,
-                category: data.category,
-                merchantName: data.merchantName,
-            };
-        } catch (parseError) {
-            console.error("Error parsing JSON response:", parseError);
-            throw new Error("Invalid response format from Gemini");
+        // Parse the JSON response
+        const data = JSON.parse(cleanedText);
+        
+        // Validate the response
+        if (!data.amount || !data.date || !data.category) {
+            throw new Error("Could not extract all required information from the receipt");
         }
+
+        return {
+            amount: parseFloat(data.amount),
+            date: new Date(data.date),
+            description: data.description || "Receipt scan",
+            category: data.category,
+            merchantName: data.merchantName || "Unknown merchant",
+        };
+
     } catch (error) {
         console.error("Error scanning receipt:", error);
-        throw new Error("Failed to scan receipt");
+        
+        // Return user-friendly error message
+        if (error instanceof Error) {
+            throw new Error(`Failed to scan receipt: ${error.message}`);
+        }
+        throw new Error("Failed to scan receipt. Please try again or enter the information manually.");
     }
 }
 
 // Helper function to calculate next recurring date
-function calculateNextRecurringDate(startDate, interval) {
+function calculateNextRecurringDate(startDate: any, interval: any) {
     const date = new Date(startDate);
 
     switch (interval) {

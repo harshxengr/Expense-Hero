@@ -29,13 +29,40 @@ import CreateAccountDrawer from "@/components/CreateAccountDrawer";
 import { cn } from "@/lib/utils";
 import { createTransaction, updateTransaction } from "@/actions/transaction";
 import { transactionSchema } from "@/lib/zodSchema";
-// import { ReceiptScanner } from "./recipt-scanner";
+import { ReceiptScanner } from "./ReciptScanner";
+
+import type { SerializedAccount } from "@/actions/dashboard";
+
+// Use the actual Account type from dashboard actions
+type Account = SerializedAccount;
+
+interface Category {
+  id: string;
+  name: string;
+  // Add other category properties as needed
+}
+
+interface TransactionData {
+  type: "EXPENSE" | "INCOME";
+  amount: number;
+  description: string;
+  accountId: string;
+  category: string;
+  date: string | Date;
+  isRecurring: boolean;
+  recurringInterval?: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
+}
 
 export function AddTransactionForm({
   accounts,
   categories,
   editMode = false,
   initialData = null,
+}: {
+  accounts: Account[];
+  categories: Category[];
+  editMode?: boolean;
+  initialData?: TransactionData | null;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,25 +81,25 @@ export function AddTransactionForm({
     defaultValues:
       editMode && initialData
         ? {
-          type: initialData.type,
-          amount: initialData.amount.toString(),
-          description: initialData.description,
-          accountId: initialData.accountId,
-          category: initialData.category,
-          date: new Date(initialData.date),
-          isRecurring: initialData.isRecurring,
-          ...(initialData.recurringInterval && {
-            recurringInterval: initialData.recurringInterval,
-          }),
-        }
+            type: initialData.type as "EXPENSE" | "INCOME",
+            amount: initialData.amount.toString(),
+            description: initialData.description,
+            accountId: initialData.accountId,
+            category: initialData.category,
+            date: new Date(initialData.date),
+            isRecurring: initialData.isRecurring,
+            ...(initialData.recurringInterval && {
+              recurringInterval: initialData.recurringInterval as "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY",
+            }),
+          }
         : {
-          type: "EXPENSE",
-          amount: "",
-          description: "",
-          accountId: accounts.find((ac) => ac.isDefault)?.id,
-          date: new Date(),
-          isRecurring: false,
-        },
+            type: "EXPENSE" as const,
+            amount: "",
+            description: "",
+            accountId: accounts.find((ac: any) => ac.isDefault)?.id || "",
+            date: new Date(),
+            isRecurring: false,
+          },
   });
 
   const {
@@ -81,7 +108,7 @@ export function AddTransactionForm({
     data: transactionResult,
   } = useFetch(editMode ? updateTransaction : createTransaction);
 
-  const onSubmit = (data) => {
+  const onSubmit = (data: any) => {
     const formData = {
       ...data,
       amount: parseFloat(data.amount),
@@ -94,7 +121,7 @@ export function AddTransactionForm({
     }
   };
 
-  const handleScanComplete = (scannedData) => {
+  const handleScanComplete = (scannedData: any) => {
     if (scannedData) {
       setValue("amount", scannedData.amount.toString());
       setValue("date", new Date(scannedData.date));
@@ -109,23 +136,23 @@ export function AddTransactionForm({
   };
 
   useEffect(() => {
-    if (transactionResult?.success && !transactionLoading) {
+    if (transactionResult && typeof transactionResult === "object" && "success" in transactionResult && transactionResult.success && !transactionLoading) {
       toast.success(
         editMode
           ? "Transaction updated successfully"
           : "Transaction created successfully"
       );
       reset();
-      router.push(`/account/${transactionResult.data.accountId}`);
+      router.push(`/account/${(transactionResult as any).data.accountId}`);
     }
-  }, [transactionResult, transactionLoading, editMode]);
+  }, [transactionResult, transactionLoading, editMode, reset, router]);
 
   const type = watch("type");
   const isRecurring = watch("isRecurring");
   const date = watch("date");
 
   const filteredCategories = categories.filter(
-    (category) => category.type === type
+    (category: any) => category.type === type
   );
 
   return (
@@ -137,7 +164,7 @@ export function AddTransactionForm({
       <div className="space-y-2">
         <label className="text-sm font-medium">Type</label>
         <Select
-          onValueChange={(value) => setValue("type", value)}
+          onValueChange={(value: any) => setValue("type", value)}
           defaultValue={type}
         >
           <SelectTrigger>
@@ -178,7 +205,7 @@ export function AddTransactionForm({
               <SelectValue placeholder="Select account" />
             </SelectTrigger>
             <SelectContent>
-              {accounts.map((account) => (
+              {accounts.map((account: any) => (
                 <SelectItem key={account.id} value={account.id}>
                   {account.name} (${parseFloat(account.balance).toFixed(2)})
                 </SelectItem>
@@ -210,7 +237,7 @@ export function AddTransactionForm({
             <SelectValue placeholder="Select category" />
           </SelectTrigger>
           <SelectContent>
-            {filteredCategories.map((category) => (
+            {filteredCategories.map((category: any) => (
               <SelectItem key={category.id} value={category.id}>
                 {category.name}
               </SelectItem>
@@ -242,7 +269,7 @@ export function AddTransactionForm({
             <Calendar
               mode="single"
               selected={date}
-              onSelect={(date) => setValue("date", date)}
+              onSelect={(date: any) => setValue("date", date)}
               disabled={(date) =>
                 date > new Date() || date < new Date("1900-01-01")
               }
@@ -283,7 +310,7 @@ export function AddTransactionForm({
         <div className="space-y-2">
           <label className="text-sm font-medium">Recurring Interval</label>
           <Select
-            onValueChange={(value) => setValue("recurringInterval", value)}
+            onValueChange={(value: any) => setValue("recurringInterval", value)}
             defaultValue={getValues("recurringInterval")}
           >
             <SelectTrigger>

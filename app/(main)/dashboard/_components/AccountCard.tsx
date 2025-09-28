@@ -1,102 +1,72 @@
-"use client"
+"use client";
 
-import {
-    Card,
-    CardContent,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch";
-import { ArrowDownRight, ArrowUpRight } from "lucide-react";
-import Link from "next/link";
 import { useEffect } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import useFetch from "@/hooks/useFetch";
 import { updateDefaultAccount } from "@/actions/account";
 
 interface Account {
-    id: string;
-    name: string;
-    type: "CURRENT" | "SAVINGS";
-    balance: number | string;
-    isDefault: boolean;
+  id: string;
+  name: string;
+  type: "CURRENT" | "SAVINGS";
+  balance: number | string;
+  isDefault?: boolean;
 }
 
-
 interface AccountCardProps {
-    account: Account;
+  account: Account;
 }
 
 const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
-    const { name, type, balance, id, isDefault } = account;
-    const {
-        loading: updateDefaultLoading,
-        fn: updateDefaultFn,
-        data: updatedAccount,
-        error,
-    } = useFetch(updateDefaultAccount);
+  const { id, name, type, balance, isDefault } = account;
+  const { loading, fn: updateDefaultFn, data, error } = useFetch(updateDefaultAccount);
 
-    // 3. Proper event typing
-    const handleDefaultChange = async (event: any) => {
-        event.preventDefault();
+  const handleDefaultChange = async () => {
+    if (isDefault) {
+      toast.warning("You need at least 1 default account");
+      return;
+    }
+    await updateDefaultFn(id);
+  };
 
-        if (isDefault) {
-            toast.warning("You need at least 1 default account");
-            return;
-        }
+  useEffect(() => {
+    if (typeof data === "object" && data !== null && "success" in data && (data as any).success) {
+      toast.success("Default account updated successfully");
+    }
+  }, [data]);
 
-        await updateDefaultFn(id);
-    };
+  useEffect(() => {
+    if (error) toast.error((error as Error).message || "Failed to update default account");
+  }, [error]);
 
-    useEffect(() => {
-        if (updatedAccount?.success) {
-            toast.success("Default account updated successfully");
-        }
-    }, [updatedAccount]);
+  return (
+    <Card className="hover:shadow-md transition-shadow group relative">
+      <Link href={`/account/${id}`} className="block">
+        <CardHeader className="flex justify-between items-center pb-2">
+          <CardTitle className="text-sm font-medium capitalize">{name}</CardTitle>
+          <Switch checked={isDefault} onClick={handleDefaultChange} disabled={loading} />
+        </CardHeader>
 
-    useEffect(() => {
-        if (error) {
-            const err = error as Error
-            toast.error(err.message || "Failed to update default account");
-        }
-    }, [error]);
+        <CardContent>
+          <div className="text-2xl font-bold">${parseFloat(balance.toString()).toFixed(2)}</div>
+          <p className="text-xs text-muted-foreground">{type.charAt(0) + type.slice(1).toLowerCase()} Account</p>
+        </CardContent>
 
+        <CardFooter className="flex justify-between text-sm text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <ArrowUpRight className="h-4 w-4 text-green-500" /> Income
+          </div>
+          <div className="flex items-center gap-1">
+            <ArrowDownRight className="h-4 w-4 text-red-500" /> Expense
+          </div>
+        </CardFooter>
+      </Link>
+    </Card>
+  );
+};
 
-    return (
-        <Card className="hover:shadow-md transition-shadow group relative">
-            <Link href={`/account/${id}`}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium capitalize">
-                        {name}
-                    </CardTitle>
-                    <Switch
-                        checked={isDefault}
-                        onClick={handleDefaultChange}
-                        disabled={updateDefaultLoading}
-                    />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">
-                        ${parseFloat(balance).toFixed(2)}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                        {type.charAt(0) + type.slice(1).toLowerCase()} Account
-                    </p>
-                </CardContent>
-                <CardFooter className="flex justify-between text-sm text-muted-foreground">
-                    <div className="flex items-center">
-                        <ArrowUpRight className="mr-1 h-4 w-4 text-green-500" />
-                        Income
-                    </div>
-                    <div className="flex items-center">
-                        <ArrowDownRight className="mr-1 h-4 w-4 text-red-500" />
-                        Expense
-                    </div>
-                </CardFooter>
-            </Link>
-        </Card>
-    )
-}
-
-export default AccountCard
+export default AccountCard;

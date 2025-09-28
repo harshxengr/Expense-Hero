@@ -4,8 +4,17 @@ import prisma from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
-type SerializedAccount = {
+export type SerializedAccount = {
+    id: string;
+    name: string;
+    type: "CURRENT" | "SAVINGS";
     balance: number;
+    isDefault: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+    _count: {
+        transactions: number;
+    };
 };
 
 const serializeTransaction = (obj: any): SerializedAccount => {
@@ -100,4 +109,53 @@ export async function getUserAccounts(): Promise<SerializedAccount[]> {
     });
 
     return accounts.map(serializeTransaction);
+}
+
+export type SerializedTransaction = {
+    id: string;
+    accountId: string;
+    type: "EXPENSE" | "INCOME";
+    amount: number;
+    description?: string;
+    date: Date;
+    category: string;
+    receiptUrl?: string;
+    isRecurring: boolean;
+    recurringInterval?: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
+    nextRecurringDate?: Date;
+    lastProcessed?: Date;
+    status: "PENDING" | "COMPLETED" | "FAILED";
+    userId: string;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+const serializeTransactionData = (obj: any): SerializedTransaction => {
+    const serialized = { ...obj } as SerializedTransaction;
+
+    if (obj.amount) {
+        serialized.amount = obj.amount.toNumber();
+    }
+    return serialized;
+};
+
+export async function getDashboardData(): Promise<SerializedTransaction[]> {
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+  
+    const user = await prisma.user.findUnique({
+      where: { clerkUserId: userId },
+    });
+  
+    if (!user) {
+      throw new Error("User not found");
+    }
+  
+    // Get all user transactions
+    const transactions = await prisma.transaction.findMany({
+      where: { userId: user.id },
+      orderBy: { date: "desc" },
+    });
+  
+    return transactions.map(serializeTransactionData);
 }
