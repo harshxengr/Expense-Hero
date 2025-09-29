@@ -5,14 +5,9 @@ import { BarLoader } from "react-spinners"
 import TransactionTable from "../_components/TransactionTable"
 import AccountChart from "../_components/AccountChart"
 
-interface AccountPageProps {
-    params: {
-        id: string
-    }
-}
-
-const AccountPage = async ({ params }: AccountPageProps) => {
-    const accountData = await getAccountWithTransactions(params.id)
+const AccountPage = async ({ params }: { params: Promise<{ id: string }> }) => {
+    const { id } = await params
+    const accountData = await getAccountWithTransactions(id)
     
     if (!accountData) {
         notFound();
