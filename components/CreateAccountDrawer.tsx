@@ -22,7 +22,8 @@ import { ReactNode, useEffect, useState } from "react";
 import { Input } from "./ui/input";
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod";
-import { accountSchema, AccountSchemaType } from "@/lib/zodSchema";
+import { accountSchema } from "@/lib/zodSchema";
+import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { createAccount } from "@/actions/dashboard";
@@ -35,7 +36,7 @@ interface CreateAccountDrawerProps {
 const CreateAccountDrawer: React.FC<CreateAccountDrawerProps> = ({ children }) => {
     const [open, setOpen] = useState(false);
 
-    const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<AccountSchemaType>({
+    const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<z.input<typeof accountSchema>>({
         resolver: zodResolver(accountSchema),
         defaultValues: {
             name: "",
@@ -61,7 +62,7 @@ const CreateAccountDrawer: React.FC<CreateAccountDrawerProps> = ({ children }) =
         }
     }, [error]);
 
-    const onSubmit = async (data: AccountSchemaType) => {
+    const onSubmit = async (data: z.input<typeof accountSchema>) => {
         await createAccountFn(data);
     }
 
