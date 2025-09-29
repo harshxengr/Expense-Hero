@@ -1,6 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { createMiddleware } from "@arcjet/next";
-import aj from "@/lib/arcjet";
+// Arcjet is used in APIs/server actions to keep edge bundle small
 import { NextResponse } from "next/server";
 
 const isProtectedRoute = createRouteMatcher([
@@ -21,9 +20,8 @@ const clerk = clerkMiddleware(async (auth, req) => {
     return NextResponse.next();
 });
 
-// Compose lightweight Arcjet (token bucket) + Clerk
-// Use createMiddleware with no custom props to satisfy types
-export default createMiddleware(aj as any, clerk);
+// Keep middleware lean for Edge size limits
+export default clerk;
 
 export const config = {
     matcher: [
