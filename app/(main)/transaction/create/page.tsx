@@ -9,12 +9,12 @@ interface SearchParams {
 }
 
 interface PageProps {
-    searchParams: SearchParams;
+    searchParams: Promise<SearchParams>;
 }
 
 export default async function AddTransactionPage({ searchParams }: PageProps) {
     const accounts: SerializedAccount[] = await getUserAccounts();
-    const editId = searchParams?.edit;
+    const { edit: editId } = await searchParams;
 
     let initialData = null;
     if (editId) {
