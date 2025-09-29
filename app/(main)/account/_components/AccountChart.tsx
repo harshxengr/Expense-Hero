@@ -48,10 +48,10 @@ const DATE_RANGES: { [key: string]: { label: string; days: number | null } } = {
 };
 
 const AccountChart = ({ transactions }: AccountChartProps) => {
-    const [dataRange, setDataRange] = useState<keyof typeof DATE_RANGES>("1M")
+    const [dataRange, setDataRange] = useState<string>("1M")
 
     const filteredData: ChartData[] = useMemo(() => {
-        const range = DATE_RANGES[dataRange];
+        const range = DATE_RANGES[dataRange as keyof typeof DATE_RANGES];
         const now = new Date()
         const startDate = range.days ? startOfDay(subDays(now, range.days)) : startOfDay(new Date(0))
 
@@ -96,7 +96,7 @@ const AccountChart = ({ transactions }: AccountChartProps) => {
                 <CardTitle className="text-base font-normal">
                     Transaction Overview
                 </CardTitle>
-                <Select defaultValue={dataRange} onValueChange={setDataRange}>
+                <Select defaultValue={dataRange} onValueChange={(v) => setDataRange(v)}>
                     <SelectTrigger className="w-[140px]">
                         <SelectValue placeholder="Select range" />
                     </SelectTrigger>
