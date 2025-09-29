@@ -83,7 +83,7 @@ export async function bulkDeleteTransactions(transactionIds: string[]): Promise<
 
         if (!user) throw new Error("User not found");
 
-        // Step 1: Get the transactions to be deleted
+        // Get the transactions to be deleted
         const transactions = await prisma.transaction.findMany({
             where: {
                 id: { in: transactionIds },
@@ -91,14 +91,17 @@ export async function bulkDeleteTransactions(transactionIds: string[]): Promise<
             },
         });
 
-        // Step 2: Calculate balance changes per account
+        // Calculate balance changes per account
         const accountBalanceChanges: Record<string, number> = transactions.reduce((acc, transaction) => {
-            const change = transaction.type === "EXPENSE" ? transaction.amount : -transaction.amount;
+            const amount = transaction.amount as unknown as number | { toNumber: () => number };
+            const amountNumber = typeof amount === "number"
+                ? amount
+                : (amount && typeof amount.toNumber === "function" ? amount.toNumber() : Number(amount as unknown));
+            const change = transaction.type === "EXPENSE" ? amountNumber : -amountNumber;
             acc[transaction.accountId] = (acc[transaction.accountId] || 0) + change;
             return acc;
         }, {} as Record<string, number>);
 
-        // Step 3: Perform deletion and balance updates in a transaction
         await prisma.$transaction(async (tx) => {
             await tx.transaction.deleteMany({
                 where: {
