@@ -1,14 +1,14 @@
 import arcjet, { tokenBucket } from "@arcjet/next";
 
 const aj = arcjet({
-  key: process.env.ARCJET_KEY!,
+  key: process.env.ARCJET_KEY as string,
+  characteristics: ["userId"],
   rules: [
-    // Rate limiting specifically for collection creation
     tokenBucket({
       mode: "LIVE",
-      refillRate: 10, // 10 collections
-      interval: 3600, // per hour
-      capacity: 10, // maximum burst capacity
+      refillRate: 10,
+      interval: 3600,
+      capacity: 10,
     }),
   ],
 });

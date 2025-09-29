@@ -34,6 +34,7 @@ export async function createTransaction(data: CreateTransactionData) {
         try {
             const req = await request();
             const decision = await aj.protect(req, {
+                userId,
                 requested: 1,
             });
 
