@@ -13,7 +13,7 @@ const HeroSection = () => {
 
                 {/* Left hero content */}
                 <div className='flex-1 justify-center items-center'>
-                    <h1 className="text-8xl md:text-7xl leading-tight mb-6 gradient-title">
+                    <h1 className="text-5xl md:text-7xl leading-tight mb-6 gradient-title">
                         Manage Your Expenses Easily With<span className="text-emerald-400"> Intelligence.</span>
                     </h1>
                     <p className="text-gray-500 w-full text-lg mb-8 md:mb-10 md:max-w-md">
