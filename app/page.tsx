@@ -1,10 +1,10 @@
-import HeroSection from "@/components/HeroSection";
+import HeroSection from "@/components/custom/hero-section";
 import { featuresData, statsData, howItWorksData, testimonialsData } from "@/data/landing";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import FeatureCard from "@/components/FeatureCard";
-import HowItWorkCard from "@/components/HowItWorkCard";
+import FeatureCard from "@/components/custom/feature-card";
+import HowItWorkCard from "@/components/custom/how-it-work-card";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default async function Home() {

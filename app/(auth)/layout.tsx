@@ -1,15 +1,12 @@
-import { ReactNode } from "react"
+import AuthLayout from '@/components/auth/auth-layout'
+import { ReactNode } from 'react'
 
-interface AuthLayoutProps {
-    children: ReactNode
-}
-
-const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
+const Layout = ({ children }: { children: ReactNode }) => {
     return (
-        <div className="flex justify-center py-40">
+        <AuthLayout>
             {children}
-        </div>
+        </AuthLayout>
     )
 }
 
-export default AuthLayout
+export default Layout
