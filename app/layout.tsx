@@ -3,8 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 
 import { ClerkProvider } from '@clerk/nextjs'
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import Header from "@/components/app-header";
+import Footer from "@/components/app-footer";
 import { Toaster } from "sonner";
 
 const inter = Inter({
