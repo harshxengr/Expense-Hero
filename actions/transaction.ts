@@ -4,8 +4,8 @@ import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import aj from "@/lib/arcjet";
-import { request } from "@arcjet/next";
+// import aj from "@/lib/arcjet";
+// import { request } from "@arcjet/next";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -31,21 +31,21 @@ export async function createTransaction(data: CreateTransactionData) {
             throw new Error("You must be logged in to create a transaction");
         }
 
-        try {
-            const req = await request();
-            const decision = await aj.protect(req, {
-                requested: 1,
-            });
+        // try {
+        //     const req = await request();
+        //     const decision = await aj.protect(req, {
+        //         requested: 1,
+        //     });
 
-            if (decision.isDenied()) {
-                if (decision.reason.isRateLimit()) {
-                    throw new Error("Too many requests. Please wait a moment and try again.");
-                }
-                throw new Error("Request blocked. Please try again.");
-            }
-        } catch (rateLimitError) {
-            console.warn("Rate limiting check failed:", rateLimitError);
-        }
+        //     if (decision.isDenied()) {
+        //         if (decision.reason.isRateLimit()) {
+        //             throw new Error("Too many requests. Please wait a moment and try again.");
+        //         }
+        //         throw new Error("Request blocked. Please try again.");
+        //     }
+        // } catch (rateLimitError) {
+        //     console.warn("Rate limiting check failed:", rateLimitError);
+        // }
 
         const user = await prisma.user.findUnique({
             where: { clerkUserId: userId },

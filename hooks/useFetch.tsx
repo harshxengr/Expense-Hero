@@ -1,17 +1,3 @@
-/**
- * Custom Hook for API Calls
- * 
- * This hook simplifies making API calls by providing:
- * - Loading state management
- * - Error handling with toast notifications
- * - Data state management
- * - Type safety with TypeScript generics
- * 
- * Usage:
- * const { data, loading, error, fn } = useFetch(createAccount);
- * await fn(accountData);
- */
-
 import { useState } from "react";
 import { toast } from "sonner";
 
